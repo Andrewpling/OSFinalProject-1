@@ -22,6 +22,9 @@ public abstract class MemorySimulatorBase {
 	
 	//used later to tell program to print output
 	protected static final boolean MEMSIM_DEBUG = false;
+
+	//Array to track buddy system nodes
+	ArrayList<Block> blocks[];
 	
 	/**
 	 * Default constructor that takes an input file
@@ -34,18 +37,13 @@ public abstract class MemorySimulatorBase {
 		//...it includes errors for invalid usage and out of memory
 		//...also has main memory size 
 		//so main_memory is j a char array of size 2400 
-		main_memory = new char[ Externals.MAIN_MEMORY_SIZE ];
+		main_memory = new char[ 640 ];
 		
 		//deals with the file we put 
 		//inputfileparser returns all the stuff in the input file in 
 		//a format that this program uses, aka proccesses 
 		processes = InputFileParser.parseInputFile( fileName );
 		initializeMainMemory();
-		for (Process p : processes) {
-			debugPrintln("Process " + p.getPid() + " (size " + p.getSize() + ")");
-			debugPrintln("  Start Time: " + p.getStartTime());
-			debugPrintln("  End Time: " + p.getEndTime());
-		}
 	}
 	
 	/**
@@ -66,17 +64,13 @@ public abstract class MemorySimulatorBase {
 	public void timeStep() {
 		CURRENT_TIME++;
 		while (!eventOccursAt(CURRENT_TIME)) {
-			debugPrintln("Fast-forwarding past boring time " + CURRENT_TIME);
 			CURRENT_TIME++;
 		}
-		
-		debugPrintln("=========== TIME IS NOW " + CURRENT_TIME + " ============");
 		
 		//Processes exit the system
 		ArrayList<Process> toRemove = new ArrayList<Process>();
 		for (Process p : processes) {
 			if (p.getEndTime() == CURRENT_TIME) {
-				debugPrintln("Removing process " + p.getPid());
 				removeFromMemory(p);
 				toRemove.add(p);
 			}
@@ -88,11 +82,32 @@ public abstract class MemorySimulatorBase {
 		//Processes enter the system
 		for (Process p : processes) {
 			if (p.getStartTime() == CURRENT_TIME) {
-				debugPrintln("Adding process " + p.getPid());
 				putInMemory(p);
 			}
 		}
 	}
+
+	public void buddyWalk(){
+		initializeBuddySystem();
+		for (Process P: processes){
+			putInMemoryBuddy(P);
+			printMemory();
+		}
+	}
+
+
+	//class to create objects for buddy algorithm
+	class Block {
+		int begin;
+        int end;
+
+        Block(int b, int e){
+            begin = b;
+            end = e;
+        }
+	}
+
+	
 
 	/**
 	 * Move the simulator into the future
@@ -102,17 +117,13 @@ public abstract class MemorySimulatorBase {
 		while (CURRENT_TIME < t) {
 			CURRENT_TIME++;
 			while (!eventOccursAt(CURRENT_TIME) && CURRENT_TIME < t) {
-				debugPrintln("Fast-forwarding past boring time " + CURRENT_TIME);
 				CURRENT_TIME++;
 			} 
-			
-			debugPrintln("=========== TIME IS NOW " + CURRENT_TIME + " ============");
 			
 			//Processes exit the system
 			ArrayList<Process> toRemove = new ArrayList<Process>();
 			for (Process p : processes) {
 				if (p.getEndTime() == CURRENT_TIME) {
-					debugPrintln("Removing process " + p.getPid());
 					removeFromMemory(p);
 					toRemove.add(p);
 				}
@@ -124,7 +135,6 @@ public abstract class MemorySimulatorBase {
 			//Processes enter the system
 			for (Process p : processes) {
 				if (p.getStartTime() == CURRENT_TIME) {
-					debugPrintln("Adding process " + p.getPid());
 					putInMemory(p);
 				}
 			}
@@ -156,14 +166,59 @@ public abstract class MemorySimulatorBase {
 			defragment();
 			targetSlot = getNextSlot(p.getSize());
 			if (targetSlot == -1) {
-				Externals.outOfMemoryExit();
+				System.out.println("No more memory");
 			}
 		}
-		debugPrintln("Got a target slot of " + targetSlot + " for pid " + p.getPid());
-		//If we get here, we know that there's an open chunk
+		
 		for (int i = 0; i < p.getSize(); i++) {
 			main_memory[i+targetSlot] = p.getPid();
 		}
+	}
+
+	public void putInMemoryBuddy(Process p){
+		int x = blocking(p.getSize());
+		int mark;
+		Block temp = null;
+
+		if(blocks[x].size() > 0){
+			temp = (Block)blocks[x].remove(0);
+			for(int i = temp.begin; i < temp.end; i++){
+				main_memory[i] = p.getPid();
+			}
+			return;
+		}
+
+		for (mark = x; mark < blocks.length; mark++){
+			if(blocks[mark].size() == 0){
+				continue;
+			}
+			break;
+		}
+
+		if(mark == blocks.length){
+			System.out.println("No available memory, process exiting");
+			return;
+		}
+
+		temp = (Block)blocks[mark].remove(0);
+		mark = mark - 1;
+
+		while (mark >= x){
+			
+			Block a = new Block(temp.begin, temp.begin + (temp.end - temp.begin) / 2);
+			Block b = new Block(temp.begin + (temp.end - temp.begin + 1) / 2, temp.end);
+
+			blocks[mark].add(a);
+			blocks[mark].add(b);
+
+			temp = (Block)blocks[mark].remove(0);
+			mark--;
+		}
+
+		for(int i = temp.begin; i < temp.end; i++){
+			main_memory[i] = p.getPid();
+		}
+		System.out.println("Memory successfully allocated");
 	}
 	
 	/**
@@ -193,6 +248,18 @@ public abstract class MemorySimulatorBase {
 			//free memory is the .
 			main_memory[i] = FREE_MEMORY;
 		}
+	}
+
+	//begin tracking for buddy algorithm steps
+	//calculates number of blocks needed
+	//fills array list with empty slots for those blocks
+	private void initializeBuddySystem(){
+		int x = blocking(main_memory.length);
+		blocks = new ArrayList[x + 1];
+		for(int i = 0; i <= x; i++){
+			blocks[i] = new ArrayList<>();
+		}
+		blocks[x].add(new Block(80, 639)); 
 	}
 
 	/**
@@ -259,33 +326,15 @@ public abstract class MemorySimulatorBase {
 	}
 	
 	/**
-	 * Print a string if a debug flag is set.
-	 * Do not include a newline.
-	 * @param toPrint The string to print
-	 */
-	private static void debugPrint(String toPrint) {
-		if (MEMSIM_DEBUG == true) {
-			System.out.print(toPrint);
-		}
-	}
-
-	/**
-	 * Print a string if a debug flag is set.
-	 * Include a newline.
-	 * @param toPrint The string to print
-	 */
-	private static void debugPrintln(String toPrint) {
-		if (MEMSIM_DEBUG == true) {
-			System.out.println(toPrint);
-		}
-	}
-	
-	/**
 	 * Get the number of processes with events remaining in the simulator
 	 * @return The number of processes with events remaining in the simulator
 	 */
 	public int processesRemaining() {
 		return processes.size();
+	}
+
+	public int blocking(int x){
+		return (int)Math.ceil(Math.log(x)/Math.log(2));
 	}
 	
 }

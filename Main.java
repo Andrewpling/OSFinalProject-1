@@ -6,9 +6,6 @@ import java.util.Scanner;
  */
 public class Main {
 	public static void main( String[] args ) {
-		if (args.length != 1) {
-			Externals.invalidUsageExit();
-		}
 		
 		MemorySimulatorBase sim = null;
 		System.out.println("=====================================================");
@@ -23,7 +20,7 @@ public class Main {
 		int userInput = scanner.nextInt();
 		
 		if ( userInput == 1 ) {
-			sim = new FirstFitMemorySimulator( args[0] );
+			sim = new FirstFitMemorySimulator( "input.txt" );
 		} else if ( userInput == 2 ) {
 			sim = new BestFitMemorySimulator( args[0] );
 		} else if ( userInput == 3 ) {
@@ -32,24 +29,33 @@ public class Main {
 			sim = new WorstFitMemorySimulator( args[0] );
 		} else if ( userInput == 5 ) {
 			sim = new NonContiguousMemorySimulator( args[0] );
+		} else if (userInput == 6){
+			sim = new BuddySortSimulator("input2.txt");
 		} else {
-			Externals.invalidUsageExit();
+			System.out.println("Invalid option, exiting...");
 		}
 		
-		sim.timeStepUntil(0);
-		sim.printMemory();
+		if(userInput != 6){
 
-		while (sim.processesRemaining() > 0) {
-			userInput = 0;
-			System.out.print("memsim> ");
-			userInput = scanner.nextInt();
-			if (userInput == 0) {
-				System.exit(0);
-			}		
-			sim.timeStepUntil(userInput);
+			sim.timeStepUntil(0);
 			sim.printMemory();
+
+			while (sim.processesRemaining() > 0) {
+				userInput = 0;
+				System.out.print("memsim> ");
+				userInput = scanner.nextInt();
+				if (userInput == 0) {
+					System.exit(0);
+				}		
+				sim.timeStepUntil(userInput);
+				sim.printMemory();
+			}
+			
+			System.out.println("No more events to process... exiting!");
 		}
-		
-		System.out.println("No more events to process... exiting!");
+		else{
+			sim.buddyWalk();
+			System.out.println("Done");
+		}
 	}
 }
