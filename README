@@ -7,7 +7,7 @@ Names: Milan Black, Andrew Fleming, Sydney Pearce
 Build Instructions: Makefile included
 
 Run Instructions:
- java Main <input-file>
+ java Main
  
  --> You will be prompted to select your memory simulator
  --> Choose from the options presented
