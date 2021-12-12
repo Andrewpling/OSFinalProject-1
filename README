@@ -4,7 +4,8 @@ Memory Management Simulation
 ----------------------------------------------------
 Names: Milan Black, Andrew Fleming, Sydney Pearce
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Build Instructions: Makefile included
+
+
 
 Run Instructions:
  java Main
@@ -15,8 +16,6 @@ Run Instructions:
 Submitted Files:
  - Main.java: 
      Main entry point for simulator.
- - Externals.java:
-     Contains commonly-used constants and functions
  - InputFileParser.java: 
      Reads in a .txt file and outputs a list of Processes
  - Process.java: 
@@ -33,9 +32,9 @@ Submitted Files:
      Employs a worst-fit memory management strategy
  - NonContiguousMemorySimulator.java
      Employs a non-continguous memory allocation strategy
- - input.txt
-     Sample input data
- - Makefile
-     Project build script
+ - BuddySortSimulator.java
+     Employs a buddy memory allocation strategy
+ - Various input text files
+     Used for testing each sorting pattern
  - javadoc/
      JavaDoc Documentation generated for all source files
