@@ -15,20 +15,22 @@ public class Main {
 		"\n2: Best Fit" +
 		"\n3: Next Fit" +
 		"\n4: Worst Fit" +
-		"\n5: Non Contiguous");
+		"\n5: Non Contiguous" +
+		"\n6: Buddy System" +
+		"\nWhat is your selection?");
 		Scanner scanner = new Scanner(System.in);
 		int userInput = scanner.nextInt();
 		
 		if ( userInput == 1 ) {
 			sim = new FirstFitMemorySimulator( "input.txt" );
 		} else if ( userInput == 2 ) {
-			sim = new BestFitMemorySimulator( args[0] );
+			sim = new BestFitMemorySimulator( "bestworst.txt" );
 		} else if ( userInput == 3 ) {
-			sim = new NextFitMemorySimulator( args[0] );
+			sim = new NextFitMemorySimulator( "firstnext.txt");
 		} else if ( userInput == 4 ) {
-			sim = new WorstFitMemorySimulator( args[0] );
+			sim = new WorstFitMemorySimulator( "bestworst.txt" );
 		} else if ( userInput == 5 ) {
-			sim = new NonContiguousMemorySimulator( args[0] );
+			sim = new NonContiguousMemorySimulator( "input.txt" );
 		} else if (userInput == 6){
 			sim = new BuddySortSimulator("input2.txt");
 		} else {
